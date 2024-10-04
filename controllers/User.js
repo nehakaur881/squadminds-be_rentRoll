@@ -2,6 +2,8 @@ const bcrypt = require('bcrypt')
 const crypto = require('crypto')
 const nodemailer = require('nodemailer')
 require('dotenv').config()
+const jwt = require('jsonwebtoken');
+
 
 
 // dbEntry  for admin
@@ -56,28 +58,27 @@ exports.admin = async (req, res) => {
 }
 
 // login 
-
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
-    console.log(email, password)
+    console.log(email, password);
 
     if (!email || !password) {
         return res.status(401).json({
             success: false,
-            message: "all field are required.."
-        })
+            message: "All fields are required."
+        });
     }
 
     try {
         const data = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        console.log("start>>>>", data, "dattttttttttt")
+        console.log("start>>>>", data, "dattttttttttt");
 
         if (data.rows.length === 0) {
             return res.status(402).json({
                 success: false,
-                message: "User not register Please SignUp.."
-            })
+                message: "User not registered. Please sign up."
+            });
         }
 
         const user = data.rows[0];
@@ -87,29 +88,45 @@ exports.login = async (req, res) => {
         if (!matchPassword) {
             return res.status(403).json({
                 success: false,
-                message: "Password incorrect"
-            })
+                message: "Password incorrect."
+            });
         }
+
+        
+        const payload = {
+            userId: user.id,
+            email: user.email
+        };
+
+        
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1m' }); 
+
+       
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', 
+            maxAge: 1 * 60 * 1000 
+        });
 
         return res.status(200).json({
             success: true,
-            message: "User Login successfully...",
-            user: data.rows[0]
-        })
-    }
-    catch (error) {
+            message: "User logged in successfully.",
+            user: {
+                id: user.id,
+                email: user.email
+            }
+        });
+    } catch (error) {
         console.log(error);
         return res.status(500).json({
             success: false,
-            messege: "Please try again",
-        })
+            message: "Please try again."
+        });
     }
-
-}
-
+};
 
 // forgotPassword
-exports.sendotp = async (req, res) => {
+exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
     console.log("email", email);
 
@@ -139,7 +156,7 @@ exports.sendotp = async (req, res) => {
        
         await pool.query('UPDATE users SET token = $1, tokenexpire = $2 WHERE email = $3', [token, tokenExpiry, email]);
 
-        const resetLink = `http://localhost:5000/api/reset-password?token=${token}`;
+        const resetLink = `${process.env.API_URL}/api/reset-password?token=${token}`;
 
         let transporter = nodemailer.createTransport({
             host: process.env.MAIL_HOST,
