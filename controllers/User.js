@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken');
 // dbEntry  for admin
 
 exports.admin = async (req, res) => {
-    const {email, password } = req.body;
+    const { email, password } = req.body;
 
     console.log(req.body)
 
@@ -92,20 +92,20 @@ exports.login = async (req, res) => {
             });
         }
 
-        
+
         const payload = {
             userId: user.id,
             email: user.email
         };
 
-        
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1m' }); 
 
-       
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1m' });
+
+
         res.cookie('token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', 
-            maxAge: 1 * 60 * 1000 
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 1 * 60 * 1000
         });
 
         return res.status(200).json({
@@ -148,12 +148,12 @@ exports.forgotPassword = async (req, res) => {
 
         // console.log(email, ">>>>>");
 
-    
+
         const token = crypto.randomBytes(20).toString('hex');
         const tokenExpiry = new Date(Date.now() + 2 * 60 * 1000);
 
 
-       
+
         await pool.query('UPDATE users SET token = $1, tokenexpire = $2 WHERE email = $3', [token, tokenExpiry, email]);
 
         const resetLink = `${process.env.API_URL}/api/reset-password?token=${token}`;
@@ -193,8 +193,8 @@ exports.forgotPassword = async (req, res) => {
 // resetPassword
 exports.resetPassword = async (req, res) => {
 
-    const {newPassword}  = req.body;
-    const token  = req.query.token;
+    const { newPassword } = req.body;
+    const token = req.query.token;
 
     if (!token || !newPassword) {
         return res.status(400).json({
@@ -222,10 +222,47 @@ exports.resetPassword = async (req, res) => {
             message: "Password  reset successfully."
         });
     } catch (error) {
-        console.error( error);
+        console.error(error);
         return res.status(500).json({
             success: false,
             message: "Password not reset please try again..."
         });
+    }
+}
+
+exports.addProperties = async (req, res) => {
+
+    try {
+        const { propertyname, zip, city, ward, location, street, } = req.body;
+
+        if (!propertyname || !zip || !city || !ward || !location || !street) {
+            return res.status(400).json({
+                status: 400,
+                success: false,
+                message: "please fill require fields"
+            })
+        }
+
+        const query = 'INSERT INTO properties ( propertyname, zip, city, ward, location, street ) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *'
+        const value = [propertyname, zip, city, ward, location, street,  ];
+        const result = await pool.query(query, value);
+
+        console.log("result:-", result)
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            message: "Property add successfully..",
+            data: result.rows[0]
+        })
+
+
+    } catch (error) {
+        console.log(error);
+        return res.status(501).json({
+            status: 501,
+            message: "somethings went wrong.....",
+            message:error.message
+        })
     }
 }
