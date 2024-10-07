@@ -17,6 +17,7 @@ const resetPassword =  require('./routes/userRoutes')
 const admin =  require('./routes/userRoutes')
 const protected =  require('./routes/userRoutes')
 const roomData = require('./routes/userRoutes')
+const getRoomData = require("./routes/userRoutes")
 
 
 const PORT = process.env.PORT;
@@ -27,6 +28,7 @@ app.use('/api', forgotPassword)
 app.use('/api', resetPassword)
 app.use('/api', protected)
 app.use('/api' , roomData)
+app.use('/api' , getRoomData)
 
 
 app.listen(PORT, () => {
