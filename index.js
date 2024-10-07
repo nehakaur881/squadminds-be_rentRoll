@@ -17,6 +17,7 @@ const resetPassword =  require('./routes/userRoutes')
 const admin =  require('./routes/userRoutes')
 const protected =  require('./routes/userRoutes')
 const addProperties =  require('./routes/userRoutes')
+const getProperties =  require('./routes/userRoutes')
 
 
 const PORT = process.env.PORT;
@@ -27,6 +28,7 @@ app.use('/api', forgotPassword)
 app.use('/api', resetPassword)
 app.use('/api', protected) 
 app.use('/api', addProperties)
+app.use('/api', getProperties)
 
 
 

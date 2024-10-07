@@ -233,7 +233,7 @@ exports.resetPassword = async (req, res) => {
 exports.addProperties = async (req, res) => {
 
     try {
-        const { propertyname, zip, city, ward, location, street, } = req.body;
+        const { propertyname, zip, city, ward, location, street } = req.body;
 
         if (!propertyname || !zip || !city || !ward || !location || !street) {
             return res.status(400).json({
@@ -266,3 +266,23 @@ exports.addProperties = async (req, res) => {
         })
     }
 }
+
+exports.getProperties = async (req, res) => {
+    try {
+        const query = 'SELECT * FROM properties';
+        const result = await pool.query(query);
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            data: result.rows
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(501).json({
+            status: 501,
+            message: "Something went wrong.",
+            error: error.message
+        });
+    }
+};
