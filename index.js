@@ -18,7 +18,8 @@ const admin =  require('./routes/userRoutes')
 const protected =  require('./routes/userRoutes')
 const addProperties =  require('./routes/userRoutes')
 const getProperties =  require('./routes/userRoutes')
-
+const deleteProperties = require('./routes/userRoutes')
+const updateProperties = require('./routes/userRoutes')
 
 const PORT = process.env.PORT;
 
@@ -29,6 +30,8 @@ app.use('/api', resetPassword)
 app.use('/api', protected) 
 app.use('/api', addProperties)
 app.use('/api', getProperties)
+app.use('/api', deleteProperties)
+app.use('/api', deleteProperties)
 
 
 

@@ -5,9 +5,7 @@ require('dotenv').config()
 const jwt = require('jsonwebtoken');
 
 
-
-// dbEntry  for admin
-
+// >>>>>>>>>>>>>>>>> FOR ONLY ADMIN  <<<<<<<<<<<<<<<<<<<<<<<<
 exports.admin = async (req, res) => {
     const { email, password } = req.body;
 
@@ -57,7 +55,7 @@ exports.admin = async (req, res) => {
 
 }
 
-// login 
+// >>>>>>>>>>>>>>>>> LOGIN <<<<<<<<<<<<<<<<<<<<<<<<
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
@@ -125,7 +123,7 @@ exports.login = async (req, res) => {
     }
 };
 
-// forgotPassword
+// >>>>>>>>>>>>>>>>> FORGOT PASSWORD <<<<<<<<<<<<<<<<<<<<<<<<
 exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
     console.log("email", email);
@@ -190,7 +188,7 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-// resetPassword
+// >>>>>>>>>>>>>>>>> RESET PASSWORD <<<<<<<<<<<<<<<<<<<<<<<<
 exports.resetPassword = async (req, res) => {
 
     const { newPassword } = req.body;
@@ -230,6 +228,7 @@ exports.resetPassword = async (req, res) => {
     }
 }
 
+// >>>>>>>>>>>>>>>>> ADD PROPERTIES <<<<<<<<<<<<<<<<<<<<<<<<
 exports.addProperties = async (req, res) => {
 
     try {
@@ -244,7 +243,7 @@ exports.addProperties = async (req, res) => {
         }
 
         const query = 'INSERT INTO properties ( propertyname, zip, city, ward, location, street ) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *'
-        const value = [propertyname, zip, city, ward, location, street,  ];
+        const value = [propertyname, zip, city, ward, location, street,];
         const result = await pool.query(query, value);
 
         console.log("result:-", result)
@@ -262,11 +261,12 @@ exports.addProperties = async (req, res) => {
         return res.status(501).json({
             status: 501,
             message: "somethings went wrong.....",
-            message:error.message
+            message: error.message
         })
     }
 }
 
+// >>>>>>>>>>>>>>>>> FATCH PROPERTIES <<<<<<<<<<<<<<<<<<<<<<<<
 exports.getProperties = async (req, res) => {
     try {
         const query = 'SELECT * FROM properties';
@@ -276,6 +276,72 @@ exports.getProperties = async (req, res) => {
             status: 200,
             success: true,
             data: result.rows
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(501).json({
+            status: 501,
+            message: "Something went wrong.",
+            error: error.message
+        });
+    }
+};
+
+// >>>>>>>>>>>>>>>>> UPDATE PROPERTIES <<<<<<<<<<<<<<<<<<<<<<<<
+exports.updateProperties = async (req, res) => {
+    const { propertyid } = req.params;
+    const { propertyname, zip, city, ward, location, street } = req.body;
+
+    try {
+        const query = 'UPDATE properties SET propertyname = $1, zip = $2, city = $3, ward = $4, location = $5, street = $6 WHERE propertyid = $7 RETURNING *';
+        const values = [propertyname, zip, city, ward, location, street, propertyid];
+        const result = await pool.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                status: 404,
+                success: false,
+                message: "Property not found"
+            });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            message: "Property updated successfully.",
+            data: result.rows[0]
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(501).json({
+            status: 501,
+            message: "Something went wrong.",
+            error: error.message
+        });
+    }
+};
+
+// >>>>>>>>>>>>>>>>> DELETE PROPERTIES <<<<<<<<<<<<<<<<<<<<<<<<
+exports.deleteProperties = async (req, res) => {
+    const { propertyid } = req.params;
+    console.log(propertyid,">>>>>>>>>>>>>>")
+
+    try {
+        const query = 'DELETE FROM properties WHERE propertyid = $1 RETURNING *';
+        const result = await pool.query(query, [propertyid]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                status: 404,
+                success: false,
+                message: "Property not found"
+            });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            success: true,
+            message: "Property deleted successfully."
         });
     } catch (error) {
         console.error(error);

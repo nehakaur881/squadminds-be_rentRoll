@@ -5,7 +5,10 @@ const { forgotPassword,
     resetPassword,
     login,
     admin,
-    addProperties,getProperties } = require('../controllers/User');
+    addProperties,
+    getProperties,
+    deleteProperties,
+    updateProperties } = require('../controllers/User');
 
 
 
@@ -15,6 +18,9 @@ router.post('/forgotPassword', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/addproperties', addProperties);
 router.get('/getproperties', getProperties);
+router.delete('/deleteproperties/:propertyid', deleteProperties);
+router.put('/updateproperties/:propertyid', updateProperties);
+
 
 router.get('/protected', authenticateToken, (req, res) => {
     res.status(200).json({ message: "You accessed a protected route" });
