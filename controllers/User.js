@@ -254,3 +254,47 @@ exports.logoutUser = async (req, res) => {
       return res.status(400).json("somthing went wrong during logout");
     }
   };
+
+  exports.roomData = async (req, res) => {
+    const propertyId = req.params.propertyid;
+  
+    if (!propertyId) {
+      return res.status(400).json({ error: "Property ID is required" });
+    }
+  
+    const {
+      room_no,
+      room_type,
+      room_size_sqm,
+      room_size_jou,
+      bed,
+      rent_history,
+      sort_term_daily_rent,
+      utility_history,
+      
+    } = req.body;
+  
+    try {
+      const query =
+        "INSERT INTO room (room_no ,room_type ,room_size_sqm, room_size_jou , bed , rent_history ,sort_term_daily_rent , utility_history , property_id) VALUES($1 , $2 , $3 , $4, $5 , $6 , $7 , $8 , $9)";
+  
+      await pool.query(query, [
+        room_no,
+        room_type,
+        room_size_sqm,
+        room_size_jou,
+        bed,
+        rent_history,
+        sort_term_daily_rent,
+        utility_history,
+        propertyId
+      ]);
+  
+      return res.status(200).json("data send successfully");
+    } catch (error) {
+      console.log(error.stack);
+      return res.status(500).json({
+        message: "internal server error",
+      });
+    }
+  }; 
