@@ -363,3 +363,29 @@ exports.updateRoom = async (req, res) => {
     return res.status(500).json({ messsage: "internal server error" });
   }
 };
+
+exports.deleteRoom = async (req , res) =>{
+  const {roomid} = req.params;
+  if(!roomid){
+    return res.status(404).json({
+      message : "room id not found"
+    })
+  }
+  try {
+    const checkquery = `SELECT * FROM room WHERE room_id = $1`;
+      const checkresult = await pool.query(checkquery , [roomid]);
+      if(checkresult.rowCounts === 0){
+        return res.status(404).json({
+          message : "invalid room id or room not found"
+        })
+      }
+    const query = `DELETE FROM  room WHERE room_id = $1`
+    await pool.query(query , [roomid])
+    return res.status(200).json({message : " Room table deleted successfully!"})
+      
+  } catch (error) {
+    console.log(error.stack)
+    return res.status(500).json({message : "internal server error "})
+  }
+
+}

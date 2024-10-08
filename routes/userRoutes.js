@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { forgotPassword, resetPassword, login, admin, roomData , getRoomData , updateRoom} = require('../controllers/User');
+const { forgotPassword, resetPassword, login, admin, roomData , getRoomData , updateRoom , deleteRoom} = require('../controllers/User');
 const authenticateToken = require('../middlewares/authenticateToken')
 
 
@@ -17,6 +17,7 @@ router.get('/protected', authenticateToken, (req, res) => {
 router.post('/roomdata/:propertyid' ,  roomData)
 router.get('/getRoomData' , getRoomData)
 router.patch("/updateRoomData/:propertyid/room/:roomid" , updateRoom)
+router.delete("/deleteRoom/:roomid" , deleteRoom)
 
 
 module.exports = router;
