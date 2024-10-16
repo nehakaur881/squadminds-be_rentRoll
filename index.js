@@ -1,4 +1,4 @@
-// ------------------------------------------
+
 const dotenv = require('dotenv')
 dotenv.config()
 const express = require("express");
@@ -8,8 +8,8 @@ const cors = require('cors');
 const bodyParser = require("body-parser");
 const authRoutes = require("./src/routes/auth.route");
 const propertyRoutes = require("./src/routes/property.route");
-const reportRoutes = require("./src/routes/report.routes");
-const roomReservationRoutes = require("./src/routes/roomReservation.routes")
+const reportRoutes = require("./src/routes/report.route");
+const roomReservationRoutes = require("./src/routes/reservation.routes")
 
 const app = express();
 app.use(cors({
