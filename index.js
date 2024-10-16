@@ -6,10 +6,10 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 
 const bodyParser = require("body-parser");
-const authRoutes = require("./src/routes/auth.route");
-const propertyRoutes = require("./src/routes/property.route");
-const reportRoutes = require("./src/routes/report.route");
-const roomReservationRoutes = require("./src/routes/reservation.routes")
+const authRoutes = require("./Compontes/routes/auth.route");
+const propertyRoutes = require("./Compontes/routes/property.route");
+const reportRoutes = require("./Compontes/routes/report.route");
+const roomReservationRoutes = require("./Compontes/routes/reservation.routes")
 
 const app = express();
 app.use(cors({
