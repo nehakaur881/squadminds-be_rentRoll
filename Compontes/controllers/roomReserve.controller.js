@@ -17,11 +17,11 @@ exports.roomReservation = async (req, res) => {
     check_out_time,
     departure_date,
   } = req.body;
-  // if (!property_id || !room_id) {
-  //   return res.status(404).json({
-  //     message: "Propertyid or roomid not found!",
-  //   });
-  // }
+  if (!property_id || !room_id) {
+    return res.status(404).json({
+      message: "Propertyid or roomid not found!",
+    });
+  }
 
   try {
     const query1 =
@@ -80,18 +80,65 @@ exports.getroomReservation = async (req, res) => {
 };
 
 exports.updateRoomReservation = async (req, res) => {
-  const { property_id, room_id } = req.params;
+  const { property_id, room_id, reserveroom_id } = req.params;
+  const {
+    name,
+    email,
+    phone,
+    guest,
+    notes,
+    booking_source,
+    cleaning,
+    currency,
+    amount,
+    arrived_date,
+    check_in_time,
+    check_out_time,
+    departure_date,
+  } = req.body;
   try {
     const query = `SELECT * FROM reservationroom WHERE property_id = $1 AND room_id = $2`;
     const result = await pool.query(query, [property_id, room_id]);
-    if(result.rows > 0 ){
-      res.status(200).json({ data: result.rows ,  });
-    }else{
-      return res.status(404).json({message : "No data Found to edit"})
+    console.log(result.rows.length, "result row length");
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Data not found to update" });
     }
 
-    const query1 = ``
-    
+    const query1 = `
+    UPDATE reservationroom 
+    SET name = $1, 
+        email = $2, 
+        phone = $3, 
+        guest = $4, 
+        notes = $5, 
+        booking_source = $6, 
+        cleaning = $7, 
+        currency = $8, 
+        amount = $9, 
+        arrived_date = $10, 
+        check_in_time = $11, 
+        check_out_time = $12, 
+        departure_date = $13 
+    WHERE property_id = $14 AND room_id = $15 AND reserveroom_id = $16;`;
+    await pool.query(query1, [
+      name,
+      email,
+      phone,
+      guest,
+      notes,
+      booking_source,
+      cleaning,
+      currency,
+      amount,
+      arrived_date,
+      check_in_time,
+      check_out_time,
+      departure_date,
+      property_id,
+      room_id,
+      reserveroom_id,
+    ]);
+    return res.status(200).json({ message: "data uploaded successfully" });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "internal server error " });

@@ -153,3 +153,7 @@ exports.logoutUser = async (req, res) => {
     return res.status(400).json("somthing went wrong during logout");
   }
 };
+
+exports.changePassword = async (req , res) =>{
+  
+}
