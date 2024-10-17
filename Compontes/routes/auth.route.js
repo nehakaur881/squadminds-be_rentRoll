@@ -13,6 +13,6 @@ router.post("/forgotPassword" , authController.forgotPassword);
 router.patch("/resetPassword/:token" , authController.resetPassword);
 router.patch("/logout" , authController.logoutUser);
 router.patch("/changepassword/:id" , authController.changePassword)
-
-
+router.patch("/updateProfile/:id" , authController.updateProfile)
+router.get("/getregisteruser" , authController.getregisterUser)
 module.exports = router;

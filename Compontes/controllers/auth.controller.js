@@ -32,6 +32,17 @@ exports.registerUser = async (req, res) => {
   }
 };
 
+exports.getregisterUser = async (req , res) =>{
+    const {token} = req.cookies;
+    if(!token){
+      return res.status(400).json({message : "user not found"})
+    }
+    const query = `SELECT id , firstname , lastname , email FROM users WHERE logintoken = $1`;
+    const result = await pool.query(query , [token])
+    console.log(result.rows)
+    return res.status(200).json({ data : result.rows , message : "Data send Successfully"})
+}
+
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -187,3 +198,10 @@ exports.changePassword = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+exports.updateProfile = async (req , res) =>{
+  const {id} = req.params;
+  const {firstname , lastname , email , userimage} = req.body;
+  return res.status(200).json({messaage : "Profile Update Succefully"})
+}
+
