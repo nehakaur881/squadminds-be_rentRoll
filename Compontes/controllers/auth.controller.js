@@ -5,7 +5,9 @@ const { bcrypt, bcryptCompare } = require("../utils/bcrypt.utils.js");
 const { generateToken } = require("../utils/generateToken.utils.js");
 const { bcrypt1 } = require("bcrypt");
 const { METHODS, get } = require("http");
-const {InputFieldValidate} = require("../middelware/inputFieldValiditor.middleware.js")
+const {
+  InputFieldValidate,
+} = require("../middelware/inputFieldValiditor.middleware.js");
 
 exports.registerUser = async (req, res) => {
   const { firstname, lastname, email, password } = req.body;
@@ -32,7 +34,7 @@ exports.registerUser = async (req, res) => {
 
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
-  
+
   try {
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [
       email,
@@ -60,13 +62,13 @@ exports.loginUser = async (req, res) => {
       });
       return res.status(200).json({
         success: true,
-        status:200,
+        status: 200,
         message: "User logged in successfully.",
         user: {
-            id: user.id,
-            email: user.email
-        }
-    });
+          id: user.id,
+          email: user.email,
+        },
+      });
     } else {
       res.status(409).json({ message: "Invalid credentials" });
     }
@@ -147,13 +149,46 @@ exports.logoutUser = async (req, res) => {
     await pool.query(query, [token]);
     res.clearCookie("token");
     return res.status(200).json("Logout successfully");
-
   } catch (error) {
     console.error("Error logging out ", error);
     return res.status(400).json("somthing went wrong during logout");
   }
 };
 
-exports.changePassword = async (req , res) =>{
-  
-}
+exports.changePassword = async (req, res) => {
+  const { id } = req.params;
+  const { oldpassword, newPassword } = req.body;
+
+  try {
+    // const query = `SELECT * FROM users WHERE id = $1`;
+    // const result = await pool.query(query, [id]);
+
+    // if (result.rows.length === 0) {
+    //   return res.status(404).json({ message: "user not found in database" });
+    // }
+    const query = `SELECT password FROM users WHERE id = $1 `;
+    const result = await pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const mainPassword = result.rows[0];
+
+    const decryptPassword = await bcryptCompare(
+      oldpassword,
+      mainPassword.password
+    );
+
+    if (!decryptPassword) {
+      return res.status(409).json({ message: " old Password is diffrent" });
+    }
+
+    const hasnewPassword = await bcrypt(newPassword);
+
+    const updatequery = `UPDATE users SET password = $1 WHERE id=$2`;
+    await pool.query(updatequery, [hasnewPassword, id]);
+    return res.status(200).json({ messaage: " Password Updated Successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
