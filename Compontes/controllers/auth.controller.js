@@ -160,12 +160,7 @@ exports.changePassword = async (req, res) => {
   const { oldpassword, newPassword } = req.body;
 
   try {
-    // const query = `SELECT * FROM users WHERE id = $1`;
-    // const result = await pool.query(query, [id]);
-
-    // if (result.rows.length === 0) {
-    //   return res.status(404).json({ message: "user not found in database" });
-    // }
+   
     const query = `SELECT password FROM users WHERE id = $1 `;
     const result = await pool.query(query, [id]);
     if (result.rows.length === 0) {
