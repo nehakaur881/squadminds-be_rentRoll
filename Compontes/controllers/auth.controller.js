@@ -1,6 +1,8 @@
 const pool = require("../config/db.config.js");
 const crypto = require("crypto");
 const emailService = require("../utils/email.utils.js");
+const path = require("path");
+const fs = require("fs");
 const { bcrypt, bcryptCompare } = require("../utils/bcrypt.utils.js");
 const { generateToken } = require("../utils/generateToken.utils.js");
 const { bcrypt1 } = require("bcrypt");
@@ -11,7 +13,8 @@ const {
 
 exports.registerUser = async (req, res) => {
   const { firstname, lastname, email, password } = req.body;
-
+  const avatar = req.file;
+  console.log(avatar, "avaar");
   try {
     const userExists = await pool.query(
       "SELECT * FROM users WHERE email = $1",
@@ -20,28 +23,52 @@ exports.registerUser = async (req, res) => {
     if (userExists.rowCount > 0) {
       return res.status(409).json({ message: "User already exists" });
     }
-    const hashedPassword = await bcrypt(password);
 
-    const query =
-      "INSERT INTO users (firstname, lastname, email, password) VALUES ($1, $2, $3, $4)";
-    await pool.query(query, [firstname, lastname, email, hashedPassword]);
-    res.status(201).json({ message: "User registered successfully" });
+    const hashedPassword = await bcrypt(password, 10);
+
+    const userQuery =
+      "INSERT INTO users (firstname, lastname, email, password) VALUES ($1, $2, $3, $4) RETURNING id";
+    const newUser = await pool.query(userQuery, [
+      firstname,
+      lastname,
+      email,
+      hashedPassword,
+    ]);
+
+    const newid = newUser.rows[0].id;
+
+    if (avatar) {
+      imageUrl = `/uploads/${avatar.filename}`;
+      const imageQuery = "UPDATE users SET images = $1 WHERE id = $2";
+      await pool.query(imageQuery, [imageUrl, newid]);
+    }
+    return res.status(200).json({
+      imageurl: imageUrl,
+      mesage: "user registered successfullly",
+    });
   } catch (error) {
     console.error("Error during registration", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
-exports.getregisterUser = async (req , res) =>{
-    const {token} = req.cookies;
-    if(!token){
-      return res.status(400).json({message : "user not found"})
-    }
-    const query = `SELECT id , firstname , lastname , email FROM users WHERE logintoken = $1`;
-    const result = await pool.query(query , [token])
-    console.log(result.rows)
-    return res.status(200).json({ data : result.rows , message : "Data send Successfully"})
-}
+exports.getregisterUser = async (req, res) => {
+  const { token } = req.cookies;
+  if (!token) {
+    return res.status(400).json({ message: "user not found" });
+  }
+  try {
+    const query = `SELECT id , firstname , lastname , email ,images FROM users WHERE logintoken = $1`;
+    const result = await pool.query(query, [token]);
+
+    return res
+      .status(200)
+      .json({ data: result.rows, message: "Data send Successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.status(200).json({ message: "internal server error" });
+  }
+};
 
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -171,7 +198,6 @@ exports.changePassword = async (req, res) => {
   const { oldpassword, newPassword } = req.body;
 
   try {
-   
     const query = `SELECT password FROM users WHERE id = $1 `;
     const result = await pool.query(query, [id]);
     if (result.rows.length === 0) {
@@ -199,9 +225,44 @@ exports.changePassword = async (req, res) => {
   }
 };
 
-exports.updateProfile = async (req , res) =>{
-  const {id} = req.params;
-  const {firstname , lastname , email , userimage} = req.body;
-  return res.status(200).json({messaage : "Profile Update Succefully"})
-}
+exports.updateProfile = async (req, res) => {
+  const { id } = req.params;
+  const { firstname, lastname, email } = req.body;
+  const avatar = req.file;
+  console.log(avatar, "avatar");
+
+  if (!id) {
+    return res.status(400).json({ message: "User not found" });
+  }
+
+  try {
+    
+    const validate = `SELECT id FROM users WHERE id = $1`;
+    const validateCheck = await pool.query(validate, [id]);
+    if (validateCheck.rowCount === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Update user details
+    const query = `UPDATE users SET firstname = $1, lastname = $2, email = $3 WHERE id = $4`;
+    await pool.query(query, [firstname, lastname, email, id]);
+
+    // Handle avatar update if file is uploaded
+    let imageUrl;
+    if (avatar) {
+       imageUrl = `/uploads/${avatar.filename}`;
+      const imageQuery = "UPDATE users SET images = $1 WHERE id = $2";
+      await pool.query(imageQuery, [imageUrl, id]);
+    }
+
+    return res.status(200).json({
+      imageurl: imageUrl,
+      message: "Profile updated successfully",
+    });
+
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 
