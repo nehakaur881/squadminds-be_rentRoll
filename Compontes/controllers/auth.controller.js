@@ -6,10 +6,7 @@ const fs = require("fs");
 const { bcrypt, bcryptCompare } = require("../utils/bcrypt.utils.js");
 const { generateToken } = require("../utils/generateToken.utils.js");
 const { bcrypt1 } = require("bcrypt");
-const { METHODS, get } = require("http");
-const {
-  InputFieldValidate,
-} = require("../middelware/inputFieldValiditor.middleware.js");
+const { METHODS, get} = require("http");
 
 exports.registerUser = async (req, res) => {
   const { firstname, lastname, email, password } = req.body;
@@ -229,7 +226,7 @@ exports.updateProfile = async (req, res) => {
   const { id } = req.params;
   const { firstname, lastname, email } = req.body;
   const avatar = req.file;
-  console.log(avatar, "avatar");
+  
 
   if (!id) {
     return res.status(400).json({ message: "User not found" });
@@ -250,7 +247,7 @@ exports.updateProfile = async (req, res) => {
     // Handle avatar update if file is uploaded
     let imageUrl;
     if (avatar) {
-       imageUrl = `/uploads/${avatar.filename}`;
+       imageUrl = `/api/uploads/${avatar.filename}`;
       const imageQuery = "UPDATE users SET images = $1 WHERE id = $2";
       await pool.query(imageQuery, [imageUrl, id]);
     }

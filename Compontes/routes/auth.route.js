@@ -18,7 +18,6 @@ router.patch("/updateProfile/:id" , multer.uploadSingleFile ,  authController.up
 router.get("/getregisteruser" ,  authController.getregisterUser)
 router.get('/uploads', express.static('uploads'));
 
-router.post("/uploadimage" , multer.uploadSingleFile)
 
 
 // multer router midelware
