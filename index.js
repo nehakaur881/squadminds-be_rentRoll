@@ -4,7 +4,8 @@ dotenv.config()
 const express = require("express");
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-const path = require("path")
+const path = require("path");
+const job = require("./Compontes/utils/cron.utils")
 
 const bodyParser = require("body-parser");
 const authRoutes = require("./Compontes/routes/auth.route");
@@ -26,7 +27,6 @@ app.use("/api", authRoutes);
 app.use("/api" , propertyRoutes)
 app.use("/api" , reportRoutes)
 app.use("/api" ,  roomReservationRoutes)
-
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
