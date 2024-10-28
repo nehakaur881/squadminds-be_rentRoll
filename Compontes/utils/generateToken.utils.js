@@ -7,3 +7,4 @@ const generateToken = async (payload) => {
   return await jwt.sign(payload, process.env.VITE_JSON_WEB_TOKEN, option);
 };
 module.exports = { generateToken };
+

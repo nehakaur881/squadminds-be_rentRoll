@@ -51,4 +51,4 @@ const loginVAlidationRules = () => {
   return [validateEmail(), validatePassword()];
 };
 
-module.exports = { signupValidationRules, loginVAlidationRules };
+module.exports = { validateEmail , signupValidationRules, loginVAlidationRules };

@@ -147,7 +147,7 @@ exports.updateRoomReservation = async (req, res) => {
 
 exports.overviewsApi = async (req, res) => {
   try {
-    const query = `SELECT p.property_name , p.property_id , r.room_id , r.room_no , r.rent_history , rs.reserveroom_id , rs.name , rs.email , rs.phone , rs.departure_date , rs.arrived_date , rs.guest , rs.notes , rs.booking_source , rs.cleaning , rs.currency , rs.amount , rs.check_in_time , rs.check_out_time   FROM properties p INNER JOIN room r ON p.property_id = r.property_id INNER JOIN reservationroom rs ON rs.room_id = r.room_id`;
+    const query = `SELECT p.property_name , p.property_id , r.room_id , r.room_no , r.rent_history , rs.reserveroom_id , rs.name , rs.email , rs.phone , rs.departure_date , rs.arrived_date , rs.guest , rs.notes , rs.booking_source , rs.cleaning , rs.currency , rs.amount , rs.check_in_time , rs.check_out_time  FROM properties p INNER JOIN room r ON p.property_id = r.property_id INNER JOIN reservationroom rs ON rs.room_id = r.room_id`;
     const result = await pool.query(query);
     const groupedData = {};
 

@@ -11,4 +11,4 @@ const InputFieldValidate = async (req , res , next)=>{
     }
     next()
 }
-module.exports = {InputFieldValidate};
+module.exports = InputFieldValidate;

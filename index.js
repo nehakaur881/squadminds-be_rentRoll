@@ -6,12 +6,12 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const path = require("path");
 const job = require("./Compontes/utils/cron.utils")
-
 const bodyParser = require("body-parser");
 const authRoutes = require("./Compontes/routes/auth.route");
 const propertyRoutes = require("./Compontes/routes/property.route");
 const reportRoutes = require("./Compontes/routes/report.route");
 const roomReservationRoutes = require("./Compontes/routes/reservation.routes")
+const cleaingRoutes = require("./Compontes/routes/cleaing.route")
 
 const app = express();
 app.use(cors({
@@ -27,6 +27,7 @@ app.use("/api", authRoutes);
 app.use("/api" , propertyRoutes)
 app.use("/api" , reportRoutes)
 app.use("/api" ,  roomReservationRoutes)
+app.use("/api" , cleaingRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

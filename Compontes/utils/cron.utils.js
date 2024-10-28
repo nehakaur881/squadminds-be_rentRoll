@@ -5,7 +5,7 @@ const EmailService = require("./email.utils");
 const job = new CronJob(
   " 0 0 * * *",
   async function () {
-    
+    console.log("cron job run")
     const query = `SELECT arrived_date , email , name , guest , departure_date  FROM reservationroom`;
     const result = await pool.query(query);
 
@@ -18,7 +18,7 @@ const job = new CronJob(
       const finalremainingdate = differenceInHours.toFixed(2);
 
       if (finalremainingdate > 0 && finalremainingdate < 24) {
-        EmailService.arrivedEmail(row.email, row.name, row.arrived_date);
+        EmailService.arrivedEmail(row.email, row.name, row.arrived_date).then();
       }
     });
   },
