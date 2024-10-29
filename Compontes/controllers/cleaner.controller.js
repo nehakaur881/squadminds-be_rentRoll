@@ -8,42 +8,13 @@ exports.cleaningdata = async (req, res) => {
     });
   }
   try {
-    const {
-      cleaning_date,
-      apartment,
-      cleaner,
-      additional_cost,
-      todo,
-      check_out_times,
-      notes,
-      check_in_times,
-      move_out_dates,
-      guest,
-      name,
-      email,
-      origin,
-    } = req.body;
+    const { additional_cost, todo } = req.body;
+    const query = `INSERT INTO cleaning( additional_cost , todo , reserveroom_id ) VALUES($1 , $2 , $3) returning * `;
+    await pool.query(query, [additional_cost, todo, reserveroom_id]);
 
-    const query = `INSERT INTO cleaning(cleaning_date , apartment , cleaner , additional_cost , todo , check_out_times , notes , check_in_times , move_out_dates ,guest , name , email , origin , reserveroom_id) VALUES($1 , $2 , $3 , $4 , $5 , $6 , $7 , $8 , $9 , $10 , $11 , $12 , $13 , $14 ) returning * `;
-    const result = await pool.query(query, [
-      cleaning_date,
-      apartment,
-      cleaner,
-      additional_cost,
-      todo,
-      check_out_times,
-      notes,
-      check_in_times,
-      move_out_dates,
-      guest,
-      name,
-      email,
-      origin,
-      reserveroom_id,
-    ]);
-
-    console.log(result.rows, "result rows");
     return res.status(200).json({
+      status: 200,
+      success: true,
       message: "cleaning data send successfully",
     });
   } catch (error) {
@@ -52,12 +23,13 @@ exports.cleaningdata = async (req, res) => {
     });
   }
 };
+
 exports.getCleaningdata = async (req, res) => {
-  const {token} = req.cookies;
-  if(!token){
+  const { token } = req.cookies;
+  if (!token) {
     return res.status(409).json({
-      message : "User not Valid !"
-    })
+      message: "User not Valid !",
+    });
   }
   try {
     const query = `
@@ -81,6 +53,7 @@ exports.getCleaningdata = async (req, res) => {
 
     return res.status(200).json({
       data: result.rows,
+      success: true,
       message: "Data fetched successfully!",
     });
   } catch (error) {
