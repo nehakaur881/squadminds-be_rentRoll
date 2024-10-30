@@ -153,7 +153,7 @@ exports.overviewsApi = async (req, res) => {
 
     result.rows.map((row) => {
       const { property_id, room_id } = row;
-    
+
       const key = `${property_id}-${room_id}`;
 
       if (!groupedData[key]) {

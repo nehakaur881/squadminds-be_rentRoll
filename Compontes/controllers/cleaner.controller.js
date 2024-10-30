@@ -25,6 +25,7 @@ exports.cleaningdata = async (req, res) => {
 };
 
 exports.getCleaningdata = async (req, res) => {
+
   const { token } = req.cookies;
   if (!token) {
     return res.status(409).json({
