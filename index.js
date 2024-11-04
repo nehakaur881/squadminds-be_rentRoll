@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const path = require("path");
 const job = require("./Compontes/utils/cron.utils")
+const job1 = require("./Compontes/utils/cron.utils")
 const bodyParser = require("body-parser");
 const authRoutes = require("./Compontes/routes/auth.route");
 const propertyRoutes = require("./Compontes/routes/property.route");

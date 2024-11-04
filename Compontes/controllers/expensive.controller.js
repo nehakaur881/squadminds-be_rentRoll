@@ -4,10 +4,12 @@ exports.expenseList = (req, res) => {
   const { token } = req.cookies;
      if(!token){
         return res.status(404).json({
-            message : " user not verified"
+            message : " user not valid !"
         })
      }
   try {
+    const query = `select * from expense`;
+    
     return res.status(200).json({
       message: "i am good boy",
     });

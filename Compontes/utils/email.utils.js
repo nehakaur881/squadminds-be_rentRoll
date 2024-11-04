@@ -8,6 +8,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.VITE_NODEMODILER_USER,
     pass: process.env.VITE_NODEMODILER_PASS,
   },
+  rateLimit: 5,
 });
 
 const sendResetEmail = async (email, resetUrl) => {
@@ -82,6 +83,7 @@ const departureEmail = async (email, name, departure_date) => {
         <p style="color: #999;">Contact us: [Hotel Contact Information]</p>
       </div>
     `,
+    
   };
   await transporter.sendMail(mailOption2);
 };
