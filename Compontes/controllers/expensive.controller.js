@@ -124,3 +124,20 @@ exports.addExpenseList = async (req, res) => {
   }
 };
 
+exports.getExpenseList = async (req , res) =>{
+  
+  try {
+    const query = `SELECT * from expense`;
+    const result = await pool.query(query);
+       return res.status(200).json({
+        status : 200,
+        data :  result.rows,
+        message : "Data fetch Successfully !"
+       })
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({
+      message : "Interval Server Error"
+    })
+  }
+}
