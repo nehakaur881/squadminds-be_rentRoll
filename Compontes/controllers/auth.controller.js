@@ -226,21 +226,16 @@ exports.updateProfile = async (req, res) => {
   const { id } = req.params;
   const { firstname, lastname, email } = req.body;
   const avatar = req.file;
-  
-
   if (!id) {
     return res.status(400).json({ message: "User not found" });
   }
-
   try {
-    
     const validate = `SELECT id FROM users WHERE id = $1`;
     const validateCheck = await pool.query(validate, [id]);
     if (validateCheck.rowCount === 0) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update user details
     const query = `UPDATE users SET firstname = $1, lastname = $2, email = $3 WHERE id = $4`;
     await pool.query(query, [firstname, lastname, email, id]);
 
