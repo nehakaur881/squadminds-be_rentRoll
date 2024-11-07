@@ -85,7 +85,7 @@ exports.loginUser = async (req, res) => {
     const passwordMatch = bcryptCompare(password, user.password);
 
     if (passwordMatch) {
-      const loginToken = "tokrn hu";
+      const loginToken = process.env.VITE_JSON_WEB_TOKEN;
       const token = await bcrypt(loginToken);
       const query = `UPDATE users SET logintoken = $1 WHERE email = $2`;
       await pool.query(query, [token, email]);

@@ -88,4 +88,29 @@ const departureEmail = async (email, name, departure_date) => {
   await transporter.sendMail(mailOption2);
 };
 
-module.exports = { sendResetEmail, arrivedEmail , departureEmail };
+const cleanerEmail = async (email, departure_date) => {
+  if(!email){
+    console.error("email not provided from cleaner function")
+  }
+  const mailOption3 = {
+    from: process.env.VITE_NODEMODILER_FROM,
+    to: email,
+    subject: "Cleaning Reminder: Room Cleanup Required After Departure",
+    text: `
+      Dear Cleaner,
+      This is a reminder that a room requires cleaning following the guest's departure on ${departure_date}.
+
+      Please ensure the room is cleaned and prepared for the next guest by the end of the day. Make sure to follow all cleaning protocols and double-check all amenities are in place.
+
+      Thank you for your attention to detail and for helping maintain our high standards of cleanliness.
+
+      Best regards,
+      [Your Hotel/Management Team Name]
+    `,
+  };
+  await transporter.sendMail(mailOption3)
+  
+};
+
+
+module.exports = { sendResetEmail, arrivedEmail , departureEmail , cleanerEmail };

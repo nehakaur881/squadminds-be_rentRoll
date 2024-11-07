@@ -101,8 +101,6 @@ exports.addExpenseList = async (req, res) => {
   const { room_id  } = req.params;
   const { token } = req.cookies;
   const { title, date , files } = req.body;  
-  
-
   if (!token) {
     return res.status(404).json({
       message: "User not Found",
