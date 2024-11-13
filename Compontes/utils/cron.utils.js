@@ -48,10 +48,9 @@ const moveOut = () =>
 moveOut();
 
 const cleanerEmail = ()=>
-  async function () {
-    
+  async function () {  
     try {
-      const query = `SELECT rr.cleaning , rr.departure_date , r.property_id , r.room_id , r.room_no FROM reservationroom rr INNER JOIN room r ON r.room_id = rr.room_id `;
+      const query = `SELECT rr.cleaning , rr.departure_date , r.property_id , r.room_id , r.room_no FROM reservationroom rr INNER JOIN room r ON r.room_id = rr.room_id  `;
       const result = await pool.query(query);
     
       result.rows.map((row)=>{
@@ -63,10 +62,11 @@ const cleanerEmail = ()=>
           if(row.cleaning === "true"){
                return 
           }
-         console.log(row.cleaning , row.departure_date , "row.cleadfs")
           EmailService.cleanerEmail(
             row.cleaning,
             row.departure_date, 
+            row.property_id,
+            row.room_id,
           ).then()
         }
       })
@@ -74,8 +74,6 @@ const cleanerEmail = ()=>
       console.log(error);
     }
   };
- 
-
 const job = new CronJob(
   " 0 0 * * *",
   sendmyemail(),

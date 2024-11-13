@@ -37,5 +37,4 @@ app.use("/api" , expensiveRoutes)
 
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });

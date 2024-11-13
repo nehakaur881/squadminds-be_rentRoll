@@ -11,7 +11,6 @@ const { METHODS, get} = require("http");
 exports.registerUser = async (req, res) => {
   const { firstname, lastname, email, password } = req.body;
   const avatar = req.file;
-  console.log(avatar, "avaar");
   try {
     const userExists = await pool.query(
       "SELECT * FROM users WHERE email = $1",
@@ -32,15 +31,15 @@ exports.registerUser = async (req, res) => {
       hashedPassword,
     ]);
 
-    const newid = newUser.rows[0].id;
+    // const newid = newUser.rows[0].id;
 
-    if (avatar) {
-      imageUrl = `/uploads/${avatar.filename}`;
-      const imageQuery = "UPDATE users SET images = $1 WHERE id = $2";
-      await pool.query(imageQuery, [imageUrl, newid]);
-    }
+    // if (avatar) {
+    //   imageUrl = `/uploads/${avatar.filename}`;
+    //   const imageQuery = "UPDATE users SET images = $1 WHERE id = $2";
+    //   await pool.query(imageQuery, [imageUrl, newid]);
+    // }
     return res.status(200).json({
-      imageurl: imageUrl,
+      data: newUser.rows[0].id,
       mesage: "user registered successfullly",
     });
   } catch (error) {
@@ -80,7 +79,7 @@ exports.loginUser = async (req, res) => {
     }
 
     const user = result.rows[0];
-    console.log(user);
+    
 
     const passwordMatch = bcryptCompare(password, user.password);
 

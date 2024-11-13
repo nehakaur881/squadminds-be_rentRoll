@@ -4,18 +4,26 @@ exports.roomReservation = async (req, res) => {
   const { property_id, room_id } = req.params;
   const {
     name,
-    email,
-    phone,
-    guest,
-    notes,
-    booking_source,
-    cleaning,
-    currency,
-    amount,
     arrived_date,
+    departure_date,
     check_in_time,
     check_out_time,
-    departure_date,
+    guest,
+    notes,
+    event_id,
+    email,
+    phone,
+    booking_source,
+    cleaning_id,
+    currency,
+    amount,
+    monthly,
+    cleaner,
+    additional_cost,
+    to_do,
+    Changed,
+    move_in_email_sent,
+    move_out_email_sent
   } = req.body;
   if (!property_id || !room_id) {
     return res.status(404).json({
@@ -25,7 +33,7 @@ exports.roomReservation = async (req, res) => {
 
   try {
     const query1 =
-      "INSERT INTO  reservationroom (name , email , phone , guest , notes , booking_source , cleaning , currency , amount , arrived_date ,  check_in_time, check_out_time , departure_date , property_id , room_id ) VALUES($1 , $2 , $3, $4, $5, $6, $7, $8 , $9 ,$10 , $11 , $12 , $13 , $14 , $15)";
+      "INSERT INTO  reservationroom (name , email , phone ,event_id, guest , notes , booking_source , cleaning_id , currency , amount , arrived_date ,  check_in_time, check_out_time , departure_date , monthly, cleaner, additional_cost, to_do, Changed,    move_in_email_sent, move_out_email_sent , property_id , room_id ) VALUES($1 , $2 , $3, $4, $5, $6, $7, $8 , $9 ,$10 , $11 , $12 , $13 , $14 , $15, $16 , $17 , $18 , $19 ,$20 , $21 , $22 , $23 )";
 
     await pool.query(query1, [
       name,
@@ -34,7 +42,7 @@ exports.roomReservation = async (req, res) => {
       guest,
       notes,
       booking_source,
-      cleaning,
+      cleaning_id,
       currency,
       amount,
       arrived_date,
@@ -43,13 +51,21 @@ exports.roomReservation = async (req, res) => {
       departure_date,
       property_id,
       room_id,
+      event_id,
+      monthly,
+      cleaner,
+      additional_cost,
+      to_do,
+      Changed,
+      move_in_email_sent,
+      move_out_email_sent
     ]);
 
     return res
       .status(200)
       .json({ message: "room reservation data send successfully !" });
   } catch (error) {
-    console.log(error, "error>????");
+    console.log(error,);
     return res.status(500).json({
       resonse: error,
       message: "Internal Server Error",
@@ -70,6 +86,8 @@ exports.getroomReservation = async (req, res) => {
     const result = await pool.query(query, [property_id, room_id]);
 
     return res.status(200).json({
+      status : 200,
+      success : true ,
       data: result.rows,
       message: "data fetch successfully",
     });
@@ -83,23 +101,30 @@ exports.updateRoomReservation = async (req, res) => {
   const { property_id, room_id, reserveroom_id } = req.params;
   const {
     name,
-    email,
-    phone,
-    guest,
-    notes,
-    booking_source,
-    cleaning,
-    currency,
-    amount,
     arrived_date,
+    departure_date,
     check_in_time,
     check_out_time,
-    departure_date,
+    guest,
+    notes,
+    event_id,
+    email,
+    phone,
+    booking_source,
+    cleaning_id,
+    currency,
+    amount,
+    monthly,
+    cleaner,
+    additional_cost,
+    to_do,
+    Changed,
+    move_in_email_sent,
+    move_out_email_sent
   } = req.body;
   try {
     const query = `SELECT * FROM reservationroom WHERE property_id = $1 AND room_id = $2`;
     const result = await pool.query(query, [property_id, room_id]);
-    console.log(result.rows.length, "result row length");
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Data not found to update" });
     }
@@ -118,7 +143,16 @@ exports.updateRoomReservation = async (req, res) => {
         arrived_date = $10, 
         check_in_time = $11, 
         check_out_time = $12, 
-        departure_date = $13 
+        departure_date = $13,
+        event_id = $14,
+        cleaning_id = $15,
+        monthly = $16,
+        cleaner = $17,
+        additional_cost = $18,
+        to_do = $19,
+        move_in_email_sent = $20,
+        move_out_email_sent = $21
+
     WHERE property_id = $14 AND room_id = $15 AND reserveroom_id = $16;`;
     await pool.query(query1, [
       name,
@@ -134,6 +168,15 @@ exports.updateRoomReservation = async (req, res) => {
       check_in_time,
       check_out_time,
       departure_date,
+      event_id,
+      cleaning_id,
+      monthly,
+      cleaner,
+      additional_cost,
+      to_do,
+      Changed,
+      move_in_email_sent,
+      move_out_email_sent,
       property_id,
       room_id,
       reserveroom_id,
@@ -147,7 +190,7 @@ exports.updateRoomReservation = async (req, res) => {
 
 exports.overviewsApi = async (req, res) => {
   try {
-    const query = `SELECT p.property_name , p.property_id , r.room_id , r.room_no , r.rent_history , rs.reserveroom_id , rs.name , rs.email , rs.phone , rs.departure_date , rs.arrived_date , rs.guest , rs.notes , rs.booking_source , rs.cleaning , rs.currency , rs.amount , rs.check_in_time , rs.check_out_time  FROM properties p INNER JOIN room r ON p.property_id = r.property_id INNER JOIN reservationroom rs ON rs.room_id = r.room_id`;
+    const query = `SELECT p.property_name , p.property_id , r.room_id , r.room_no , r.rent_history , rs.reservation_id , rs.name , rs.email , rs.phone , rs.departure_date , rs.arrived_date , rs.guest , rs.notes , rs.booking_source , rs.cleaning_id , rs.cleaner , rs.currency , rs.amount , rs.check_in_time , rs.check_out_time  FROM properties p INNER JOIN room r ON p.property_id = r.property_id INNER JOIN reservationroom rs ON rs.room_id = r.room_id`;
     const result = await pool.query(query);
     const groupedData = {};
 

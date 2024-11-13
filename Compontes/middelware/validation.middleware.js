@@ -3,7 +3,6 @@ dotenv.config();
 const jwt = require("jsonwebtoken");
 
 exports.validate = async (req, res, next) => {
-  console.log("babu bhaiya" , babu);
   const {token} = req.cookies;
   
   if (!token) {

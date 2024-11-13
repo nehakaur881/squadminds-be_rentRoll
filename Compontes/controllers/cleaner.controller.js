@@ -8,7 +8,7 @@ exports.cleaningdata = async (req, res) => {
     });
   }
   try {
-    const { additional_cost, todo } = req.body;
+    const{additional_cost, todo} = req.body;
     const query = `INSERT INTO cleaning( additional_cost , todo , reserveroom_id ) VALUES($1 , $2 , $3) returning * `;
     await pool.query(query, [additional_cost, todo, reserveroom_id]);
 
@@ -25,23 +25,24 @@ exports.cleaningdata = async (req, res) => {
 };
 
 exports.getCleaningdata = async (req, res) => {
+  // const { token } = req.cookies;
+  // if (!token) {
+  //   return res.status(409).json({
+  //     message: "User not Valid !",
+  //   });
+  // }
 
-  const { token } = req.cookies;
-  if (!token) {
-    return res.status(409).json({
-      message: "User not Valid !",
-    });
-  }
   try {
-    const query = `
+    
+       const query = `
         SELECT
-          p.property_name , rm.room_no , r.reserveroom_id, r.name,  r.email, r.departure_date, r.guest, 
-          r.notes, r.booking_source, r.cleaning, r.currency, r.amount,  
+          p.property_name , rm.room_no , r.room_id, r.name,  r.email, r.departure_date, r.guest, 
+          r.notes, r.booking_source, r.cleaner, r.currency, r.amount,  
           r.check_in_time, r.check_out_time, c.cleaning_id, c.additional_cost, c.todo
         FROM 
           reservationroom r
         LEFT JOIN 
-          cleaning c ON r.reserveroom_id = c.reserveroom_id
+          cleaning c ON r.room_id = c.reserveroom_id
         LEFT JOIN 
           room rm ON r.room_id = rm.room_id
         LEFT JOIN 
@@ -53,8 +54,9 @@ exports.getCleaningdata = async (req, res) => {
     const result = await pool.query(query);
 
     return res.status(200).json({
-      data: result.rows,
       success: true,
+      status : 200,
+      data: result.rows,
       message: "Data fetched successfully!",
     });
   } catch (error) {

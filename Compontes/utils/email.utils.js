@@ -90,13 +90,12 @@ const departureEmail = async (email, name, departure_date) => {
 
 const cleanerEmail = async (email, departure_date) => {
   if(!email){
-    console.error("email not provided from cleaner function")
-  }
+  };
   const mailOption3 = {
     from: process.env.VITE_NODEMODILER_FROM,
     to: email,
     subject: "Cleaning Reminder: Room Cleanup Required After Departure",
-    text: `
+    text:`
       Dear Cleaner,
       This is a reminder that a room requires cleaning following the guest's departure on ${departure_date}.
 
@@ -109,8 +108,6 @@ const cleanerEmail = async (email, departure_date) => {
     `,
   };
   await transporter.sendMail(mailOption3)
-  
 };
-
 
 module.exports = { sendResetEmail, arrivedEmail , departureEmail , cleanerEmail };

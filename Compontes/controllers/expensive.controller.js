@@ -10,7 +10,6 @@ exports.expenseList = async (req, res) => {
   try {
     const query = `SELECT p.property_name , p.property_id , r.room_no , rr.arrived_date, rr.departure_date, rr.amount, rr.room_id  FROM properties p INNER JOIN room r ON p.property_id = r.property_id INNER JOIN reservationroom rr ON rr.room_id = r.room_id`;
     const result = await pool.query(query, []);
-    console.log(result.rows, "result rows");
 
     const groupedData = {};
 

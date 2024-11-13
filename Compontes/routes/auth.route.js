@@ -10,7 +10,7 @@ const path = require("path")
 
 // user router 
 
-router.post("/submit" , userValidtor.validateEmail, InputFieldValidate , authController.registerUser);
+router.post("/submit" ,  authController.registerUser);
 router.post("/login" , authController.loginUser );
 router.post("/forgotPassword" , authController.forgotPassword);
 router.patch("/resetPassword/:token" , authController.resetPassword);

@@ -4,5 +4,5 @@ const expensiveController = require("../controllers/expensive.controller");
 
 router.get("/expense" , expensiveController.expenseList);
 router.post("/addexpense/:room_id" , expensiveController.addExpenseList )
-router.get("/getexpenseList" , expensiveController.getExpenseList)
+router.get("/getexpenseList", expensiveController.getExpenseList)
 module.exports = router;

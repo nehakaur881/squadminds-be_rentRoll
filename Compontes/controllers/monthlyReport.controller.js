@@ -21,7 +21,6 @@ exports.monthlyreportGenerator = async (req, res, next) => {
         ORDER BY month DESC , year DESC 
         `;
     const result = await pool.query(query, [propertyid, roomid]);
-    console.log(result.rows, "????????result");
     return res.status(200).json({ message: " Data fetch SuccessFullly !" });
   } catch (error) {
     console.log(error.stack);

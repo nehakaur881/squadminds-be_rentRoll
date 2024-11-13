@@ -1,31 +1,127 @@
 const pool = require("../config/db.config");
 
-exports.propertyData = async (req, res) => {
-  const { property_name, zip, city, ward, location, street, detail } = req.body;
 
+exports.addProperties = async (req, res) => {
   try {
-    const query =
-      "INSERT INTO properties (property_name , zip , city , ward , location , street , detail) VALUES($1 , $2 , $3 , $4, $5 , $6 , $7)";
+    const { property_name, zip, city, ward, location, street } = req.body;
 
-    await pool.query(query, [
-      property_name,
-      zip,
-      city,
-      ward,
-      location,
-      street,
-      detail,
-    ]);
-   
-    return res.status(200).json("data send successfully");
+    if (!property_name || !zip || !city || !ward || !location || !street) {
+      return res.status(400).json({
+        status: 400,
+        success: false,
+        message: "please fill require fields",
+      });
+    }
+
+    const query =
+      "INSERT INTO properties ( property_name, zip, city, ward, location, street ) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *";
+    const value = [property_name, zip, city, ward, location, street];
+    const result = await pool.query(query, value);
+
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      message: "Property add successfully..",
+      data: result.rows[0],
+    });
   } catch (error) {
-    console.log(error.stack);
-    return res.status(500).json({
-      message: "internal server error",
+    console.log(error);
+    return res.status(501).json({
+      status: 501,
+      message: "somethings went wrong.....",
+      message: error.message,
     });
   }
 };
 
+exports.getProperties = async (req, res) => {
+  try {
+    const query = "SELECT * FROM properties";
+    const result = await pool.query(query);
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(501).json({
+      status: 501,
+      message: "Something went wrong.",
+      error: error.message,
+    });
+  }
+};
+
+exports.updateProperties = async (req, res) => {
+  const {  id } = req.params;
+   const property_id = id;
+  if (!property_id) {
+    return res
+      .status(404)
+      .json({ message: " property_id or roomid are required" });
+  }
+  const { property_name, zip, city, ward, location, street } = req.body;
+  try {
+    const query =
+      "UPDATE properties SET property_name = $1, zip = $2, city = $3, ward = $4, location = $5, street = $6 WHERE property_id = $7 RETURNING *";
+    const values = [property_name, zip, city, ward, location, street, property_id];
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        success: false,
+        message: "Property not found",
+      });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      message: "Property updated successfully.",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(501).json({
+      status: 501,
+      message: "Something went wrong.",
+      error: error.message,
+    });
+  }
+};
+
+// DELETE PROPERTIES
+exports.deleteProperties = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const query = "DELETE FROM properties WHERE id = $1 RETURNING *";
+    const result = await pool.query(query, [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        success: false,
+        message: "Property not found",
+      });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      message: "Property deleted successfully.",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(501).json({
+      status: 501,
+      message: "Something went wrong.",
+      error: error.message,
+    });
+  }
+};
 exports.roomData = async (req, res) => {
   const propertyId = req.params.propertyid;
 
@@ -136,7 +232,6 @@ exports.updateRoom = async (req, res) => {
 };
 
 exports.deleteRoom = async (req , res) =>{
-  console.log("delete room")
   const {roomid} = req.params;
   if(!roomid){
     return res.status(404).json({
