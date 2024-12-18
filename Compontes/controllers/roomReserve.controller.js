@@ -1,13 +1,13 @@
 const pool = require("../config/db.config");
 
 exports.roomReservation = async (req, res) => {
-  const { property_id, room_id } = req.params;
+  const { property_id } = req.params;
   const {
     name,
     arrived_date,
     departure_date,
-    check_in_time,
-    check_out_time,
+    check_in_time,  
+    check_out_time, 
     guest,
     notes,
     event_id,
@@ -22,83 +22,106 @@ exports.roomReservation = async (req, res) => {
     additional_cost,
     to_do,
     Changed,
-    move_in_email_sent,
-    move_out_email_sent
+    rent_amount,
+    deposit_amount,
+    payment_method,
+    total_stay
   } = req.body;
-  if (!property_id || !room_id) {
+
+  if (!property_id ) {
     return res.status(404).json({
       message: "Propertyid or roomid not found!",
     });
   }
 
   try {
-    const query1 =
-      "INSERT INTO  reservationroom (name , email , phone ,event_id, guest , notes , booking_source , cleaning_id , currency , amount , arrived_date ,  check_in_time, check_out_time , departure_date , monthly, cleaner, additional_cost, to_do, Changed,    move_in_email_sent, move_out_email_sent , property_id , room_id ) VALUES($1 , $2 , $3, $4, $5, $6, $7, $8 , $9 ,$10 , $11 , $12 , $13 , $14 , $15, $16 , $17 , $18 , $19 ,$20 , $21 , $22 , $23 )";
+    const query1 = `
+      INSERT INTO reservationroom (
+        name, email, phone, event_id, guest, notes, booking_source, cleaning_id, 
+        currency, amount, arrived_date, check_in_time, check_out_time, departure_date, 
+        monthly, cleaner, additional_cost, to_do, Changed, property_id, rent_amount, deposit_amount, payment_method, total_stay
+      ) 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+    `;
 
     await pool.query(query1, [
       name,
       email,
       phone,
+      event_id,
       guest,
       notes,
       booking_source,
       cleaning_id,
       currency,
       amount,
-      arrived_date,
-      check_in_time,
-      check_out_time,
-      departure_date,
-      property_id,
-      room_id,
-      event_id,
+      arrived_date || null,
+      check_in_time || null,  
+      check_out_time || null, 
+      departure_date || null,
       monthly,
       cleaner,
       additional_cost,
       to_do,
       Changed,
-      move_in_email_sent,
-      move_out_email_sent
+      property_id,
+      rent_amount || null,
+      deposit_amount || null,
+      payment_method || null,
+      total_stay
     ]);
 
-    return res
-      .status(200)
-      .json({ message: "room reservation data send successfully !" });
+    return res.status(200).json({
+      status: 200,
+      message: "Room reservation data saved successfully!",
+    });
   } catch (error) {
-    console.log(error,);
+    console.log(error);
     return res.status(500).json({
-      resonse: error,
+      response: error,
       message: "Internal Server Error",
     });
   }
 };
 
 exports.getroomReservation = async (req, res) => {
-  const { property_id, room_id } = req.params;
+  const query = `
+    SELECT 
+      rr.*, 
+      p.property_name, 
+      c.email AS cleaner_email,
+      c.name AS cleaner_name,
+      c.cleaning_date,   
+      c.todo,             
+      c.maintenance      
+    FROM 
+      reservationroom rr
+    INNER JOIN 
+      properties p ON rr.property_id = p.property_id
+    LEFT JOIN 
+      cleaning c ON rr.reservation_id = c.reserveroom_id 
+  `;
 
-  if (!property_id || !room_id) {
-    return res
-      .status(200)
-      .json({ message: " your room id or propertyid not found !" });
-  }
   try {
-    const query = `SELECT * FROM reservationroom WHERE property_id = $1 AND room_id = $2`;
-    const result = await pool.query(query, [property_id, room_id]);
-
-    return res.status(200).json({
-      status : 200,
-      success : true ,
-      data: result.rows,
-      message: "data fetch successfully",
+    const reservationroom = await pool.query(query);
+    res.status(200).json({
+      success: true,
+      data: reservationroom.rows,
+      message: "Reservation room fetched successfully",
+      status: 200,
     });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: "internal sesrver error" });
+    console.error("Error fetching room data:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching room data",
+    });
   }
 };
 
 exports.updateRoomReservation = async (req, res) => {
-  const { property_id, room_id, reserveroom_id } = req.params;
+  const { property_id, reservation_id } = req.params;
   const {
     name,
     arrived_date,
@@ -111,86 +134,136 @@ exports.updateRoomReservation = async (req, res) => {
     email,
     phone,
     booking_source,
-    cleaning_id,
     currency,
     amount,
     monthly,
     cleaner,
     additional_cost,
     to_do,
-    Changed,
-    move_in_email_sent,
-    move_out_email_sent
+    rent_amount,
+    deposit_amount,
+    payment_method,
+    total_stay,
   } = req.body;
+
+
+  const guestCount = parseInt(guest, 10);
+
   try {
-    const query = `SELECT * FROM reservationroom WHERE property_id = $1 AND room_id = $2`;
-    const result = await pool.query(query, [property_id, room_id]);
+    const query = `SELECT * FROM reservationroom WHERE property_id = $1 AND reservation_id = $2`;
+    const result = await pool.query(query, [
+      property_id,
+      reservation_id,
+    ]);
+
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Data not found to update" });
+      return res.status(404).json({ message: "Reservation not found to update" });
     }
 
     const query1 = `
-    UPDATE reservationroom 
-    SET name = $1, 
+      UPDATE reservationroom 
+      SET 
+        name = $1, 
         email = $2, 
         phone = $3, 
         guest = $4, 
         notes = $5, 
-        booking_source = $6, 
-        cleaning = $7, 
-        currency = $8, 
-        amount = $9, 
-        arrived_date = $10, 
-        check_in_time = $11, 
-        check_out_time = $12, 
-        departure_date = $13,
-        event_id = $14,
-        cleaning_id = $15,
-        monthly = $16,
-        cleaner = $17,
-        additional_cost = $18,
-        to_do = $19,
-        move_in_email_sent = $20,
-        move_out_email_sent = $21
+        booking_source = $6,   
+        currency = $7, 
+        amount = $8, 
+        arrived_date = $9, 
+        check_in_time = $10, 
+        check_out_time = $11, 
+        departure_date = $12,
+        event_id = $13,
+        monthly = $14,
+        cleaner = $15,
+        additional_cost = $16,
+        to_do = $17,
+        rent_amount = $18,
+        deposit_amount = $19,
+        payment_method = $20,
+        total_stay = $21
+      WHERE property_id = $22  AND reservation_id = $23`;
 
-    WHERE property_id = $14 AND room_id = $15 AND reserveroom_id = $16;`;
     await pool.query(query1, [
       name,
       email,
       phone,
-      guest,
+      guestCount || null,
       notes,
       booking_source,
-      cleaning,
       currency,
-      amount,
-      arrived_date,
-      check_in_time,
-      check_out_time,
-      departure_date,
-      event_id,
-      cleaning_id,
-      monthly,
+      amount || null,
+      arrived_date || null,
+      check_in_time || null,
+      check_out_time || null,
+      departure_date || null,
+      event_id || null,
+      monthly || null,
       cleaner,
-      additional_cost,
-      to_do,
-      Changed,
-      move_in_email_sent,
-      move_out_email_sent,
+      additional_cost || null,
+      to_do || null,
+      rent_amount || null, 
+      deposit_amount || null, 
+      payment_method || null, 
+      total_stay || null, 
       property_id,
-      room_id,
-      reserveroom_id,
+      reservation_id,
     ]);
-    return res.status(200).json({ message: "data uploaded successfully" });
+
+    const updatedReservation = await pool.query(`
+      SELECT * FROM reservationroom 
+      WHERE property_id = $1  AND reservation_id = $2
+    `, [
+      property_id,
+      
+      reservation_id,
+    ]);
+
+
+    return res.status(200).json({
+      message: "Data uploaded successfully",
+      status: 200,
+      success: true,
+      data: updatedReservation.rows[0], 
+    });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: "internal server error " });
+    console.log("Error updating reservation:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
 exports.overviewsApi = async (req, res) => {
   try {
-    const query = `SELECT p.property_name , p.property_id , r.room_id , r.room_no , r.rent_history , rs.reservation_id , rs.name , rs.email , rs.phone , rs.departure_date , rs.arrived_date , rs.guest , rs.notes , rs.booking_source , rs.cleaning_id , rs.cleaner , rs.currency , rs.amount , rs.check_in_time , rs.check_out_time  FROM properties p INNER JOIN room r ON p.property_id = r.property_id INNER JOIN reservationroom rs ON rs.room_id = r.room_id`;
+    const query = `
+  SELECT 
+    p.property_name, 
+    p.property_id,  
+    rs.reservation_id, 
+    rs.name, 
+    rs.email, 
+    rs.phone, 
+    rs.departure_date, 
+    rs.arrived_date, 
+    rs.guest, 
+    rs.notes, 
+    rs.booking_source, 
+    rs.cleaning_id, 
+    rs.cleaner, 
+    rs.currency, 
+    rs.amount, 
+    rs.check_in_time, 
+    rs.check_out_time,
+    r.room_id,
+    r.room_no
+  FROM 
+    properties p 
+  LEFT JOIN 
+    reservationroom rs ON rs.property_id = p.property_id
+  LEFT JOIN 
+    room r ON r.property_id = p.property_id`;
+
     const result = await pool.query(query);
     const groupedData = {};
 

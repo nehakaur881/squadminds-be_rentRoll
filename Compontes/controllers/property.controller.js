@@ -1,35 +1,43 @@
 const pool = require("../config/db.config");
 
-
 exports.addProperties = async (req, res) => {
   try {
     const { property_name, zip, city, ward, location, street } = req.body;
+    const pdf_file = req.file; 
+    let fileUrl = null;
 
-    if (!property_name || !zip || !city || !ward || !location || !street) {
+    // Validate required fields
+    if (!property_name) {
       return res.status(400).json({
         status: 400,
         success: false,
-        message: "please fill require fields",
+        message: "Please fill required fields",
       });
     }
+    if (pdf_file) {
+      fileUrl = `${process.env.BACKEND_URL}/uploads/${pdf_file.filename}`;
+      console.log("Uploaded file URL:", fileUrl);
+    }
 
-    const query =
-      "INSERT INTO properties ( property_name, zip, city, ward, location, street ) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *";
-    const value = [property_name, zip, city, ward, location, street];
-    const result = await pool.query(query, value);
+    const query = `
+      INSERT INTO properties (property_name, zip, city, ward, location, street, pdf_file)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *`;
+    const values = [property_name, zip, city, ward, location, street, fileUrl];
+    const result = await pool.query(query, values);
 
     return res.status(200).json({
       status: 200,
       success: true,
-      message: "Property add successfully..",
+      message: "Property added successfully.",
       data: result.rows[0],
     });
   } catch (error) {
-    console.log(error);
-    return res.status(501).json({
-      status: 501,
-      message: "somethings went wrong.....",
-      message: error.message,
+    console.error(error);
+    return res.status(500).json({
+      status: 500,
+      message: "Something went wrong.",
+      error: error.message,
     });
   }
 };
@@ -62,10 +70,20 @@ exports.updateProperties = async (req, res) => {
       .json({ message: " property_id or roomid are required" });
   }
   const { property_name, zip, city, ward, location, street } = req.body;
+  const filesData = req.file;  
+  let filesUrl = null;
+
   try {
+    if (filesData) {
+      filesUrl = `${process.env.BACKEND_URL}/uploads/${filesData.filename}`; 
+         
+    }
+    else if (invoice) {
+      filesUrl = invoice; 
+    }
     const query =
-      "UPDATE properties SET property_name = $1, zip = $2, city = $3, ward = $4, location = $5, street = $6 WHERE property_id = $7 RETURNING *";
-    const values = [property_name, zip, city, ward, location, street, property_id];
+      "UPDATE properties SET property_name = $1, zip = $2, city = $3, ward = $4, location = $5, street = $6 , pdf_file = $7 WHERE property_id = $8 RETURNING *";
+    const values = [property_name, zip, city, ward, location, street, filesUrl , property_id];
     const result = await pool.query(query, values);
 
     if (result.rows.length === 0) {
@@ -82,6 +100,7 @@ exports.updateProperties = async (req, res) => {
       message: "Property updated successfully.",
       data: result.rows[0],
     });
+    
   } catch (error) {
     console.error(error);
     return res.status(501).json({
@@ -92,7 +111,6 @@ exports.updateProperties = async (req, res) => {
   }
 };
 
-// DELETE PROPERTIES
 exports.deleteProperties = async (req, res) => {
   const { id } = req.params;
 
@@ -122,6 +140,7 @@ exports.deleteProperties = async (req, res) => {
     });
   }
 };
+
 exports.roomData = async (req, res) => {
   const propertyId = req.params.propertyid;
 
@@ -139,21 +158,23 @@ exports.roomData = async (req, res) => {
     sort_term_daily_rent,
     utility_history,
   } = req.body;
-
+  const pdfFile = req.file;  
+  let pdfFileUrl = null;
   try {
     const query =
-      "INSERT INTO room (room_no ,room_type ,room_size_sqm, room_size_jou , bed , rent_history ,sort_term_daily_rent , utility_history , property_id) VALUES($1 , $2 , $3 , $4, $5 , $6 , $7 , $8 , $9)";
+    "INSERT INTO room (room_no, room_type, room_size_sqm, room_size_jou, bed, rent_history, sort_term_daily_rent, utility_history, property_id, pdf_file) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)";
 
     await pool.query(query, [
       room_no,
       room_type,
-      room_size_sqm,
-      room_size_jou,
-      bed,
-      rent_history,
-      sort_term_daily_rent,
-      utility_history,
+      room_size_sqm || null,
+      room_size_jou || null,
+      bed || null,
+      rent_history || null,
+      sort_term_daily_rent || null,
+      utility_history || null,
       propertyId,
+      pdfFileUrl || null,
     ]);
 
     return res.status(200).json("data send successfully");
@@ -163,10 +184,13 @@ exports.roomData = async (req, res) => {
       message: "internal server error",
     });
   }
-};
+};  
 
 exports.getRoomData = async (req, res) => {
-  const query = `SELECT * FROM room`;
+  const query = `SELECT * 
+  FROM room r
+  INNER JOIN properties p ON r.property_id = p.property_id;
+  `;
   try {
     const rentRoomData = await pool.query(query);
 
@@ -191,9 +215,10 @@ exports.updateRoom = async (req, res) => {
   if (!propertyid || !roomid) {
     return res
       .status(404)
-      .json({ message: " propertyid or roomid are required" });
+      .json({ message: "propertyid or roomid are required" });
   }
   const {
+    room_no,
     room_type,
     room_size_sqm,
     room_size_jou,
@@ -202,18 +227,38 @@ exports.updateRoom = async (req, res) => {
     sort_term_daily_rent,
     utility_history,
   } = req.body;
+  const pdfFile = req.file;  
+  let pdfFileUrl = null;
   try {
     
-    
-    const query = `UPDATE room SET  room_type = $1 , room_size_sqm = $2 , room_size_jou = $3 , bed = $4 , rent_history = $5 , sort_term_daily_rent  = $6 , utility_history = $7 WHERE room_id = $8 AND property_id = $9 `;
+    if (pdfFile) {
+      pdfFileUrl = `${process.env.BACKEND_URL}/uploads/${pdfFile.filename}`;
+      console.log("pdfFileUrl",pdfFile.filename)
+    }
+    const query = `
+    UPDATE room 
+    SET 
+      room_no = $1, 
+      room_type = $2, 
+      room_size_sqm = $3, 
+      room_size_jou = $4, 
+      bed = $5, 
+      rent_history = $6, 
+      sort_term_daily_rent = $7, 
+      utility_history = $8 ,
+      pdf_file = $9 
+    WHERE room_id = $10 AND property_id = $11
+    RETURNING *`;
     const result = await pool.query(query, [
-      room_type,
-      room_size_sqm,
-      room_size_jou,
-      bed,
-      rent_history,
-      sort_term_daily_rent,
-      utility_history,
+      room_no,
+      room_type || null,
+      room_size_sqm || null,
+      room_size_jou || null,
+      bed || null,
+      rent_history || null,
+      sort_term_daily_rent || null,
+      utility_history || null, 
+      pdfFileUrl || null,
       roomid,
       propertyid,
     ]);

@@ -1,24 +1,32 @@
-const dotenv = require("dotenv");
-dotenv.config();
-const nodemailer = require("nodemailer");
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.VITE_NODEMODILER_USER,
-    pass: process.env.VITE_NODEMODILER_PASS,
-  },
-  rateLimit: 5,
-});
-
+require('dotenv').config();
+const nodemailer = require("nodemailer")
+  const transporter = nodemailer.createTransport({
+    host: process.env.MAIL_HOST,
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.VITE_NODEMODILER_USER,
+      pass: process.env.VITE_NODEMODILER_PASS,
+    },
+  });
+  
 const sendResetEmail = async (email, resetUrl) => {
   const mailOptions = {
     from: process.env.VITE_NODEMODILER_FROM,
     to: email,
-    subject: "Password Reset",
-    html: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
+    subject: 'Password Reset',
+    html: `<h3>Dear Admin</h3>
+           <p>You have requested to reset your password. Please click the link below to reset it:</p>
+           <a href="${resetUrl}">Reset Password</a>
+           <p>If you did not request this change, please ignore this email.</p>
+           <br><p>Thank you</p>`,
   };
-  await transporter.sendMail(mailOptions);
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
 };
 
 const arrivedEmail = async (email, name, arrival_date, departure_date) => {
@@ -89,7 +97,10 @@ const departureEmail = async (email, name, departure_date) => {
 };
 
 const cleanerEmail = async (email, departure_date) => {
-  if(!email){
+  if (!email) {
+    return res.status(404).json({
+      message: "email not found!",
+    });
   };
   const mailOption3 = {
     from: process.env.VITE_NODEMODILER_FROM,
@@ -110,4 +121,29 @@ const cleanerEmail = async (email, departure_date) => {
   await transporter.sendMail(mailOption3)
 };
 
-module.exports = { sendResetEmail, arrivedEmail , departureEmail , cleanerEmail };
+const manualCleanerEmail = async (email, cleaner_name, room_no, property_name) => {
+  if (!email) {
+    return res.status(404).json({
+      message: "email not found!",
+    });
+  };
+  const mailOption4 = {
+    from: process.env.VITE_NODEMODILER_FROM,
+    to: email,
+    subject: "Cleaning Reminder: Room Cleanup Required After Departure",
+    text:`
+      Dear Cleaner ${cleaner_name},
+      This is a reminder that a room ${property_name} ${room_no} requires cleaning
+
+      Please ensure the room is cleaned and prepared for the next guest by the end of the day. Make sure to follow all cleaning protocols and double-check all amenities are in place.
+
+      Thank you for your attention to detail and for helping maintain our high standards of cleanliness.
+
+      Best regards,
+      [Your Hotel/Management Team Name]
+    `,
+  };
+  await transporter.sendMail(mailOption4)
+};
+
+module.exports = { sendResetEmail, arrivedEmail , departureEmail , cleanerEmail, manualCleanerEmail };

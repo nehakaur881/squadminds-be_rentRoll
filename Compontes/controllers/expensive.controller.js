@@ -1,4 +1,5 @@
 const pool = require("../config/db.config");
+
 exports.expenseList = async (req, res) => {
   const { token } = req.cookies;
   if (!token) {
@@ -97,18 +98,31 @@ exports.expenseList = async (req, res) => {
 };
 
 exports.addExpenseList = async (req, res) => {
-  const { room_id  } = req.params;
-  const { token } = req.cookies;
-  const { title, date , files } = req.body;  
-  if (!token) {
+ 
+  const { property_id } = req.params;
+  const { title, date, description } = req.body;
+  if (!property_id) {
     return res.status(404).json({
-      message: "User not Found",
+      message: "data not Found",
     });
   }
-
+  const files = req.file;
+  let filesUrl = null;
   try {
-    const query = `INSERT INTO expense(title, date , files ,room_id) VALUES($1, $2, $3 , $4 ) RETURNING *`;
-    const result = await pool.query(query, [JSON.stringify(title), date , files ,room_id]);
+    if (files) {
+      filesUrl = `${process.env.BACKEND_URL}/uploads/${files.filename}`;
+      console.log("filesUrl", files.filename);
+    }
+    const query = `INSERT INTO expense(title, date, property_id,
+     files, description) VALUES($1, $2, $3, $4, $5) RETURNING *`;
+    const result = await pool.query(query, [
+      JSON.stringify(title),
+      date,
+      property_id,
+      filesUrl,
+      description,
+    ]);
+
     return res.status(200).json({
       data: result.rows,
       message: "Expense data sent successfully!",
@@ -121,20 +135,72 @@ exports.addExpenseList = async (req, res) => {
   }
 };
 
-exports.getExpenseList = async (req , res) =>{
-  
+exports.getExpenseList = async (req, res) => {
   try {
-    const query = `SELECT * from expense`;
+    const query = ` SELECT
+    e.expense_id,
+    e.property_id,
+    e.title,
+    e.date,
+    e.files,
+    e.description,
+    e.created_at,
+    p.property_name
+  FROM
+    expense e
+  JOIN
+  properties p ON e.property_id = p.property_id;
+  `;
     const result = await pool.query(query);
-       return res.status(200).json({
-        status : 200,
-        data :  result.rows,
-        message : "Data fetch Successfully !"
-       })
+    return res.status(200).json({
+      status: 200,
+      data: result.rows,
+      message: "Data fetch Successfully !",
+      success: true,
+    });
   } catch (error) {
-    console.error(error)
+    console.error(error);
     return res.status(500).json({
-      message : "Interval Server Error"
-    })
+      message: "Interval Server Error",
+    });
   }
-}
+};
+
+exports.updateExpenseList = async (req, res) => {
+  const { expense_id } = req.params;
+  if (!expense_id) {
+    return res
+      .status(404)
+      .json({ message: "expense_id is required" });
+  }
+  const { title, date, description, property_id, invoice } = req.body;
+  const filesData = req.file;  
+  let filesUrl = null;
+  try {
+    if (filesData) {
+      filesUrl = `${process.env.BACKEND_URL}/uploads/${filesData.filename}`;
+     
+    }
+    else if (invoice) {
+      filesUrl = invoice; 
+    }
+    const query = `UPDATE expense SET title = $1, date = $2, description = $3, files = $4, property_id = $5 WHERE expense_id = $6`;
+    const result = await pool.query(query, [
+      title,
+      date,
+      description,
+      filesUrl || null,
+      property_id,
+      expense_id,
+    ]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "expense not found to update" });
+    }
+    return res.status(200).json({
+      message: "expense updated successfully",
+    });
+  } catch (error) {
+    console.log(error.stack);
+    return res.status(500).json({ messsage: "internal server error" });
+  }
+};

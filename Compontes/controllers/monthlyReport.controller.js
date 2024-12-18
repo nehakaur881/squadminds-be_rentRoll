@@ -4,6 +4,7 @@ exports.monthlyreportGenerator = async (req, res, next) => {
   const { propertyid, roomid } = req.params;
 
   if (!propertyid || !roomid) {
+    console.log(" iam running")
     return res.status(404).json({
       message: "provide property id or roomid ",
     });

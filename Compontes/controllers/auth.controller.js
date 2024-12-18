@@ -3,14 +3,15 @@ const crypto = require("crypto");
 const emailService = require("../utils/email.utils.js");
 const path = require("path");
 const fs = require("fs");
-const { bcrypt, bcryptCompare } = require("../utils/bcrypt.utils.js");
-const { generateToken } = require("../utils/generateToken.utils.js");
-const { bcrypt1 } = require("bcrypt");
-const { METHODS, get} = require("http");
+const { bcryptCompare, bcrypt } = require("../utils/bcrypt.utils.js");
+
+const generateRandomToken = (length) => crypto.randomBytes(length).toString("hex").slice(0, length);
 
 exports.registerUser = async (req, res) => {
-  const { firstname, lastname, email, password } = req.body;
-  const avatar = req.file;
+  let { firstname, lastname, email, password } = req.body;
+  email =  email.trim().toLowerCase();
+  password = password.trim();       
+  // const avatar = req.file;
   try {
     const userExists = await pool.query(
       "SELECT * FROM users WHERE email = $1",
@@ -31,14 +32,8 @@ exports.registerUser = async (req, res) => {
       hashedPassword,
     ]);
 
-    // const newid = newUser.rows[0].id;
-
-    // if (avatar) {
-    //   imageUrl = `/uploads/${avatar.filename}`;
-    //   const imageQuery = "UPDATE users SET images = $1 WHERE id = $2";
-    //   await pool.query(imageQuery, [imageUrl, newid]);
-    // }
     return res.status(200).json({
+      status : 200,
       data: newUser.rows[0].id,
       mesage: "user registered successfullly",
     });
@@ -47,79 +42,94 @@ exports.registerUser = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
-
 exports.getregisterUser = async (req, res) => {
-  const { token } = req.cookies;
+  const { token } = req.body;
   if (!token) {
     return res.status(400).json({ message: "user not found" });
   }
   try {
-    const query = `SELECT id , firstname , lastname , email ,images FROM users WHERE logintoken = $1`;
+    const query = `SELECT id , firstname , lastname , email , images FROM users WHERE logintoken = $1`;
     const result = await pool.query(query, [token]);
 
     return res
       .status(200)
-      .json({ data: result.rows, message: "Data send Successfully" });
+      .json({ data: result.rows, message: "Data send Successfully" , status:200 , success : true });
   } catch (error) {
     console.log(error);
     return res.status(200).json({ message: "internal server error" });
   }
 };
-
-exports.loginUser = async (req, res) => {
+exports.login = async (req, res) => {
   const { email, password } = req.body;
 
+  // Check if email and password are provided
+  if (!email || !password) {
+    return res.status(401).json({
+      success: false,
+      message: "All fields are required.",
+    });
+  }
+
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
+    const data = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
 
-    if (result.rowCount === 0) {
-      return res.status(409).json({ message: "Invalid credentials" });
+    if (data.rows.length === 0) {
+      return res.status(402).json({
+        success: false,
+        message: "User not registered. Please sign up.",
+      });
     }
 
-    const user = result.rows[0];
-    
+    const user = data.rows[0];
 
-    const passwordMatch = bcryptCompare(password, user.password);
+    const matchPassword = await bcryptCompare(password, user.password);
 
-    if (passwordMatch) {
-      const loginToken = process.env.VITE_JSON_WEB_TOKEN;
-      const token = await bcrypt(loginToken);
-      const query = `UPDATE users SET logintoken = $1 WHERE email = $2`;
-      await pool.query(query, [token, email]);
-
-      res.cookie("token", token, {
-        METHODS: get,
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
+    if (!matchPassword) {
+      return res.status(404).json({
+        success: false,
+        message: "invalid Credential.",
       });
-      return res.status(200).json({
-        success: true,
-        status: 200,
-        message: "User logged in successfully.",
-        user: {
-          id: user.id,
-          email: user.email,
-        },
-      });
-    } else {
-      res.status(409).json({ message: "Invalid credentials" });
     }
+
+    const randomToken = generateRandomToken(38);
+
+    try {
+      await pool.query("UPDATE users SET logintoken = $1 WHERE id = $2", [randomToken, user.id]);
+    } catch (dbError) {
+      console.log("Database update error:", dbError);
+      return res.status(500).json({
+        success: false,
+        message: "Database update failed.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User logged in successfully.",
+      status: 200,
+      user: {
+        id: user.id,
+        email: user.email,
+        token: randomToken,
+      },
+    });
   } catch (error) {
-    console.error("Error during login", error);
-    res.status(500).json({ message: "Server error" });
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Please try again.",
+    });
   }
 };
-
 exports.forgotPassword = async (req, res) => {
-  const { email } = req.body;
+  let { email } = req.body;
+  email = email.trim().toLowerCase();
   try {
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [
       email,
     ]);
     if (result.rowCount === 0) {
-      return res.status(409).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
@@ -128,7 +138,7 @@ exports.forgotPassword = async (req, res) => {
       [resetToken, email]
     );
 
-    const resetUrl = `http://localhost:3000/api/resetPassword/${resetToken}`;
+    const resetUrl = `${process.env.REACT_APP_API_URL}/authentication/sign-in/reset/${resetToken}`;
     await emailService.sendResetEmail(email, resetUrl);
 
     res.status(200).json({ message: "Reset password link sent successfully" });
@@ -137,20 +147,19 @@ exports.forgotPassword = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 exports.resetPassword = async (req, res) => {
   const token = req.params.token;
-  const { newPassword } = req.body;
-  const hasPassword = await bcrypt(newPassword, 10);
+  const { confirmpassword} = req.body;
+  const hasPassword = await bcrypt(confirmpassword, 10);
   try {
     const user = await pool.query(
       "SELECT * FROM users WHERE resetToken = $1 AND resetToken_expiry > NOW()",
       [token]
     );
     if (user.rowCount === 0) {
-      return res
-        .status(404)
-        .json({ message: "Invalid or expired reset token" });
+      return res.status(404).json({
+          
+          message: "Invalid or expired reset token" });
     }
 
     await pool.query(
@@ -158,16 +167,18 @@ exports.resetPassword = async (req, res) => {
       [hasPassword, token]
     );
 
-    res.status(200).json({ message: "Password updated successfully" });
+    res.status(200).json({ 
+      status : 200,
+      success : true ,
+      message: "Password updated successfully" });
   } catch (error) {
     console.error("Error updating password", error);
     res.status(500).json({ message: "Server error" });
   }
 };
-
 exports.logoutUser = async (req, res) => {
   const { token } = req.body;
-
+  
   try {
     if (!token) {
       return res.status(400).json({ message: "token not found" });
@@ -181,49 +192,50 @@ exports.logoutUser = async (req, res) => {
 
     const query = `UPDATE users Set logintoken = NULL  WHERE logintoken = $1`;
     await pool.query(query, [token]);
-    res.clearCookie("token");
-    return res.status(200).json("Logout successfully");
+    return res.status(200).json({
+      status : 200,
+      message : "Logout successfully"});
   } catch (error) {
     console.error("Error logging out ", error);
     return res.status(400).json("somthing went wrong during logout");
   }
 };
-
 exports.changePassword = async (req, res) => {
-  const { id } = req.params;
-  const { oldpassword, newPassword } = req.body;
+
+  const { oldpassword, newPassword, id } = req.body;
 
   try {
-    const query = `SELECT password FROM users WHERE id = $1 `;
+    const query = `SELECT password FROM users WHERE id = $1`;
     const result = await pool.query(query, [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "User not found" });
     }
-    const mainPassword = result.rows[0];
 
-    const decryptPassword = await bcryptCompare(
-      oldpassword,
-      mainPassword.password
-    );
+    const mainPassword = result.rows[0].password;
+
+    const decryptPassword = await bcryptCompare(oldpassword, mainPassword);
 
     if (!decryptPassword) {
-      return res.status(409).json({ message: " old Password is diffrent" });
+      return res.status(409).json({ message: "Old password is different" });
     }
 
-    const hasnewPassword = await bcrypt(newPassword);
+    const hashedNewPassword = await bcrypt(newPassword);
 
-    const updatequery = `UPDATE users SET password = $1 WHERE id=$2`;
-    await pool.query(updatequery, [hasnewPassword, id]);
-    return res.status(200).json({ messaage: " Password Updated Successfully" });
+    const updateQuery = `UPDATE users SET password = $1 WHERE id = $2`;
+    await pool.query(updateQuery, [hashedNewPassword, id]);
+
+    return res
+      .status(200)
+      .json({ message: "Password updated successfully", status: 200, success: true, });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
 exports.updateProfile = async (req, res) => {
   const { id } = req.params;
-  const { firstname, lastname, email } = req.body;
+  const { firstname, lastname, email, contact } = req.body;
+  
   const avatar = req.file;
   if (!id) {
     return res.status(400).json({ message: "User not found" });
@@ -235,22 +247,26 @@ exports.updateProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const query = `UPDATE users SET firstname = $1, lastname = $2, email = $3 WHERE id = $4`;
-    await pool.query(query, [firstname, lastname, email, id]);
-
-    // Handle avatar update if file is uploaded
+    const query = `UPDATE users SET firstname = $1, lastname = $2, email = $3, contact = $4 WHERE id = $5`;
+    const data = await pool.query(query, [
+      firstname,
+      lastname,
+      email,
+      contact || null,
+      id,
+    ]);
     let imageUrl;
     if (avatar) {
-       imageUrl = `/api/uploads/${avatar.filename}`;
+      imageUrl = `${process.env.BACKEND_URL}/uploads/${avatar.filename}`;
       const imageQuery = "UPDATE users SET images = $1 WHERE id = $2";
       await pool.query(imageQuery, [imageUrl, id]);
     }
-
     return res.status(200).json({
-      imageurl: imageUrl,
+      imageUrl: imageUrl,
       message: "Profile updated successfully",
+      status: 200,
+      data: data,
     });
-
   } catch (error) {
     console.error("Error updating profile:", error);
     return res.status(500).json({ message: "Server error" });

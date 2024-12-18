@@ -5,7 +5,18 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "sequelize-configfile-js": "npx sequelize-cli db:migrate --config config/config.js",
+    "sequelize:create-migration": "npx sequelize-cli migration:generate --name",
+    "sequelize:migrate-run": "npx sequelize-cli db:migrate",
+    "sequelize:migrate:undo": "npx sequelize-cli db:migrate:undo",
+    "sequelize:migrate:run-specific-migration": "npx sequelize-cli db:migrate --to",
+    "sequelize:migrate:delete-specific": "npx sequelize-cli db:migrate:undo --name",
+    "sequelize:create-seeders" : "npx sequelize-cli seed:generate --name ",
+    "sequelize:seeder-run" : "npx sequelize-cli db:seed:all",
+    "sequelize:seeder:undo":"npx npx sequelize-cli db:seed:undo",
+    "sequelize:seeder:undo-all":"npx sequelize-cli db:seed:undo:all",
+    "sequelize:seeder:specific-file": "npx sequelize-cli db:seed --seed "
   },
   "author": "",
   "license": "ISC",
@@ -19,10 +30,17 @@
     "express": "^4.21.0",
     "express-validator": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.15",
     "nodemon": "^3.1.7",
-    "pg": "^8.13.0",
-    "pg-pool": "^3.7.0"
+    "pg": "^8.13.1",
+    "pg-hstore": "^2.3.4",
+    "pg-pool": "^3.7.0",
+    "sequelize": "^6.37.5",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "sequelize-cli": "^6.6.2"
   }
 }
